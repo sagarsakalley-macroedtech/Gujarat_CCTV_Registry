@@ -29,4 +29,4 @@ Live Application
 
 The application is deployed on Streamlit Community Cloud and can be accessed here:
 
-https://cctvgujarat.streamlit.ap
+https://cctvgujarat.streamlit.app/
