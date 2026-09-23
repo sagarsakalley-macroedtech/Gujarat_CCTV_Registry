@@ -6,15 +6,28 @@
 
 import streamlit as st
 import pandas as pd
+
 from sqlalchemy import func
 
-from config.database import SessionLocal
+# ---------------------------------------------------------
+# DATABASE
+# ---------------------------------------------------------
 
+# IMPORTANT:
+# Use the SAME engine/session for both table creation
+# and application queries.
+
+from database.database import engine, SessionLocal
 from database.models import (
+    Base,
     Camera,
     Department,
-    District
+    District,
 )
+
+# ---------------------------------------------------------
+# FRONTEND MODULES
+# ---------------------------------------------------------
 
 from frontend.map_view import show_map
 from frontend.camera_onboarding import show_onboarding
@@ -28,8 +41,24 @@ st.set_page_config(
     page_title="Gujarat CCTV Registry",
     page_icon="📹",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
+
+
+# =========================================================
+# DATABASE INITIALIZATION
+# =========================================================
+
+# IMPORTANT:
+# models.py contains the actual SQLAlchemy Base and models.
+# Therefore tables MUST be created from models.Base.
+
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    st.error("Database initialization failed.")
+    st.exception(e)
+    st.stop()
 
 
 # =========================================================
@@ -82,7 +111,7 @@ st.markdown(
 
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -96,7 +125,7 @@ st.sidebar.markdown(
         Gujarat CCTV Registry
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 st.sidebar.markdown(
@@ -105,7 +134,7 @@ st.sidebar.markdown(
         Centralised CCTV Asset & GIS Registry
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 st.sidebar.divider()
@@ -122,8 +151,8 @@ page = st.sidebar.radio(
         "CCTV Registry",
         "GIS Map",
         "Camera Onboarding",
-        "Camera Details"
-    ]
+        "Camera Details",
+    ],
 )
 
 
@@ -134,6 +163,7 @@ page = st.sidebar.radio(
 st.sidebar.markdown(
     """
     <div class="model-card">
+
         <div class="model-title">
             Model 01
         </div>
@@ -141,9 +171,10 @@ st.sidebar.markdown(
         <div class="model-text">
             Centralised CCTV Registry &amp; GIS Mapping
         </div>
+
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -163,7 +194,7 @@ def show_dashboard():
 
     st.markdown(
         '<div class="main-title">Gujarat CCTV Registry</div>',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     st.markdown(
@@ -172,7 +203,7 @@ def show_dashboard():
             Centralised Government CCTV Asset Management Platform
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     db = get_database()
@@ -269,9 +300,7 @@ def show_dashboard():
         # INFRASTRUCTURE OVERVIEW
         # -------------------------------------------------
 
-        st.subheader(
-            "Infrastructure Overview"
-        )
+        st.subheader("Infrastructure Overview")
 
         col1, col2, col3 = st.columns(3)
 
@@ -327,16 +356,17 @@ def show_dashboard():
                 department_data,
                 columns=[
                     "Department",
-                    "Cameras"
-                ]
+                    "Cameras",
+                ],
             )
 
             st.bar_chart(
-                df_department.set_index("Department")
+                df_department.set_index(
+                    "Department"
+                )
             )
 
         else:
-
             st.info(
                 "No department camera data available."
             )
@@ -366,24 +396,22 @@ def show_dashboard():
                 status_data,
                 columns=[
                     "Status",
-                    "Cameras"
-                ]
+                    "Cameras",
+                ],
             )
 
             col1, col2 = st.columns(2)
 
             with col1:
-
                 st.bar_chart(
                     df_status.set_index("Status")
                 )
 
             with col2:
-
                 st.dataframe(
                     df_status,
                     use_container_width=True,
-                    hide_index=True
+                    hide_index=True,
                 )
 
         # -------------------------------------------------
@@ -407,18 +435,17 @@ def show_dashboard():
 
             for camera in recent_cameras:
 
-                department_name = "Unknown"
-                district_name = "Unknown"
+                department_name = (
+                    camera.department.department_name
+                    if camera.department
+                    else "Unknown"
+                )
 
-                if camera.department:
-                    department_name = (
-                        camera.department.department_name
-                    )
-
-                if camera.district:
-                    district_name = (
-                        camera.district.district_name
-                    )
+                district_name = (
+                    camera.district.district_name
+                    if camera.district
+                    else "Unknown"
+                )
 
                 rows.append(
                     {
@@ -432,25 +459,13 @@ def show_dashboard():
                             district_name,
 
                         "Location":
-                            getattr(
-                                camera,
-                                "location_name",
-                                None
-                            ),
+                            camera.location_name,
 
                         "Status":
-                            getattr(
-                                camera,
-                                "operational_status",
-                                None
-                            ),
+                            camera.operational_status,
 
                         "Maintenance":
-                            getattr(
-                                camera,
-                                "maintenance_status",
-                                None
-                            )
+                            camera.maintenance_status,
                     }
                 )
 
@@ -459,7 +474,7 @@ def show_dashboard():
             st.dataframe(
                 df_recent,
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
             )
 
         else:
@@ -487,9 +502,7 @@ def show_dashboard():
 
 def show_registry():
 
-    st.title(
-        "CCTV Registry"
-    )
+    st.title("CCTV Registry")
 
     st.caption(
         "Centralised inventory of registered CCTV assets"
@@ -500,7 +513,7 @@ def show_registry():
     try:
 
         # -------------------------------------------------
-        # LOAD FILTER DATA
+        # LOAD DEPARTMENTS
         # -------------------------------------------------
 
         departments = (
@@ -510,6 +523,10 @@ def show_registry():
             )
             .all()
         )
+
+        # -------------------------------------------------
+        # LOAD DISTRICTS
+        # -------------------------------------------------
 
         districts = (
             db.query(District)
@@ -537,11 +554,15 @@ def show_registry():
             for d in districts
         ]
 
+        # -------------------------------------------------
+        # STATUS OPTIONS
+        # -------------------------------------------------
+
         status_options = [
             "All Status",
             "Active",
             "Offline",
-            "Unknown"
+            "Unknown",
         ]
 
         # -------------------------------------------------
@@ -554,25 +575,25 @@ def show_registry():
 
             selected_department = st.selectbox(
                 "Department",
-                department_options
+                department_options,
             )
 
         with col2:
 
             selected_district = st.selectbox(
                 "District",
-                district_options
+                district_options,
             )
 
         with col3:
 
             selected_status = st.selectbox(
                 "Operational Status",
-                status_options
+                status_options,
             )
 
         # -------------------------------------------------
-        # QUERY
+        # CAMERA QUERY
         # -------------------------------------------------
 
         query = db.query(Camera)
@@ -583,15 +604,17 @@ def show_registry():
                 (
                     d
                     for d in departments
-                    if d.department_name == selected_department
+                    if d.department_name
+                    == selected_department
                 ),
-                None
+                None,
             )
 
             if department:
 
                 query = query.filter(
-                    Camera.department_id == department.id
+                    Camera.department_id
+                    == department.id
                 )
 
         if selected_district != "All Districts":
@@ -600,21 +623,24 @@ def show_registry():
                 (
                     d
                     for d in districts
-                    if d.district_name == selected_district
+                    if d.district_name
+                    == selected_district
                 ),
-                None
+                None,
             )
 
             if district:
 
                 query = query.filter(
-                    Camera.district_id == district.id
+                    Camera.district_id
+                    == district.id
                 )
 
         if selected_status != "All Status":
 
             query = query.filter(
-                Camera.operational_status == selected_status
+                Camera.operational_status
+                == selected_status
             )
 
         cameras = (
@@ -622,10 +648,6 @@ def show_registry():
             .order_by(Camera.id)
             .all()
         )
-
-        # -------------------------------------------------
-        # SUMMARY
-        # -------------------------------------------------
 
         st.write(
             f"**{len(cameras)} camera(s) found**"
@@ -663,46 +685,22 @@ def show_registry():
                         district_name,
 
                     "Location":
-                        getattr(
-                            camera,
-                            "location_name",
-                            None
-                        ),
+                        camera.location_name,
 
                     "Camera Type":
-                        getattr(
-                            camera,
-                            "camera_type",
-                            None
-                        ),
+                        camera.camera_type,
 
                     "Connectivity":
-                        getattr(
-                            camera,
-                            "connectivity_type",
-                            None
-                        ),
+                        camera.connectivity_type,
 
                     "Storage":
-                        getattr(
-                            camera,
-                            "storage_type",
-                            None
-                        ),
+                        camera.storage_type,
 
                     "Status":
-                        getattr(
-                            camera,
-                            "operational_status",
-                            None
-                        ),
+                        camera.operational_status,
 
                     "Maintenance":
-                        getattr(
-                            camera,
-                            "maintenance_status",
-                            None
-                        )
+                        camera.maintenance_status,
                 }
             )
 
@@ -713,7 +711,7 @@ def show_registry():
             st.dataframe(
                 df,
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
             )
 
         else:
@@ -741,9 +739,7 @@ def show_registry():
 
 def show_camera_details():
 
-    st.title(
-        "Camera Details"
-    )
+    st.title("Camera Details")
 
     st.caption(
         "Detailed CCTV asset information"
@@ -774,16 +770,17 @@ def show_camera_details():
 
         selected_camera_id = st.selectbox(
             "Select Camera",
-            camera_ids
+            camera_ids,
         )
 
         camera = next(
             (
                 c
                 for c in cameras
-                if c.camera_id == selected_camera_id
+                if c.camera_id
+                == selected_camera_id
             ),
-            None
+            None,
         )
 
         if not camera:
@@ -795,7 +792,7 @@ def show_camera_details():
             return
 
         # -------------------------------------------------
-        # CAMERA HEADER
+        # HEADER
         # -------------------------------------------------
 
         st.subheader(
@@ -824,35 +821,29 @@ def show_camera_details():
 
             st.metric(
                 "Operational Status",
-                getattr(
-                    camera,
-                    "operational_status",
-                    "Unknown"
-                )
+                camera.operational_status
+                or "Unknown",
             )
 
         with col2:
 
             st.metric(
                 "Maintenance",
-                getattr(
-                    camera,
-                    "maintenance_status",
-                    "Unknown"
-                )
+                camera.maintenance_status
+                or "Unknown",
             )
 
         with col3:
 
-            retention = getattr(
-                camera,
-                "retention_days",
-                0
+            retention = (
+                camera.retention_days
+                if camera.retention_days is not None
+                else 0
             )
 
             st.metric(
                 "Retention",
-                f"{retention} days"
+                f"{retention} days",
             )
 
         st.divider()
@@ -870,59 +861,56 @@ def show_camera_details():
         with col1:
 
             st.write(
-                f"**Camera ID:** "
-                f"{camera.camera_id}"
+                f"**Camera ID:** {camera.camera_id}"
             )
 
             st.write(
-                f"**Department:** "
-                f"{department_name}"
+                f"**Department:** {department_name}"
             )
 
             st.write(
-                f"**District:** "
-                f"{district_name}"
+                f"**District:** {district_name}"
             )
 
             st.write(
                 f"**Location:** "
-                f"{getattr(camera, 'location_name', 'N/A')}"
+                f"{camera.location_name or 'N/A'}"
             )
 
             st.write(
                 f"**Taluka:** "
-                f"{getattr(camera, 'taluka', 'N/A')}"
+                f"{camera.taluka or 'N/A'}"
             )
 
             st.write(
                 f"**Village / Area:** "
-                f"{getattr(camera, 'village', 'N/A')}"
+                f"{camera.village or 'N/A'}"
             )
 
         with col2:
 
             st.write(
                 f"**Camera Type:** "
-                f"{getattr(camera, 'camera_type', 'N/A')}"
+                f"{camera.camera_type or 'N/A'}"
             )
 
             st.write(
                 f"**Manufacturer:** "
-                f"{getattr(camera, 'manufacturer', 'N/A')}"
+                f"{camera.manufacturer or 'N/A'}"
             )
 
             st.write(
                 f"**Model:** "
-                f"{getattr(camera, 'model', 'N/A')}"
+                f"{camera.model or 'N/A'}"
             )
 
             st.write(
                 f"**Ownership:** "
-                f"{getattr(camera, 'ownership', 'N/A')}"
+                f"{camera.ownership or 'N/A'}"
             )
 
         # -------------------------------------------------
-        # LOCATION
+        # GEOGRAPHICAL INFORMATION
         # -------------------------------------------------
 
         st.subheader(
@@ -935,18 +923,18 @@ def show_camera_details():
 
             st.write(
                 f"**Latitude:** "
-                f"{getattr(camera, 'latitude', 'N/A')}"
+                f"{camera.latitude if camera.latitude is not None else 'N/A'}"
             )
 
         with col2:
 
             st.write(
                 f"**Longitude:** "
-                f"{getattr(camera, 'longitude', 'N/A')}"
+                f"{camera.longitude if camera.longitude is not None else 'N/A'}"
             )
 
         # -------------------------------------------------
-        # CONNECTIVITY
+        # CONNECTIVITY & STORAGE
         # -------------------------------------------------
 
         st.subheader(
@@ -959,24 +947,67 @@ def show_camera_details():
 
             st.write(
                 f"**Connectivity:** "
-                f"{getattr(camera, 'connectivity_type', 'N/A')}"
+                f"{camera.connectivity_type or 'N/A'}"
             )
 
             st.write(
                 f"**VMS Vendor:** "
-                f"{getattr(camera, 'vms_vendor', 'N/A')}"
+                f"{camera.vms_vendor or 'N/A'}"
             )
 
         with col2:
 
             st.write(
                 f"**Storage:** "
-                f"{getattr(camera, 'storage_type', 'N/A')}"
+                f"{camera.storage_type or 'N/A'}"
             )
 
             st.write(
                 f"**Retention:** "
-                f"{getattr(camera, 'retention_days', 'N/A')} days"
+                f"{camera.retention_days if camera.retention_days is not None else 'N/A'} days"
+            )
+
+        # -------------------------------------------------
+        # DATES
+        # -------------------------------------------------
+
+        st.subheader(
+            "Installation & AMC"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.write(
+                f"**Installation Date:** "
+                f"{camera.installation_date or 'N/A'}"
+            )
+
+            st.write(
+                f"**AMC Start:** "
+                f"{camera.amc_start_date or 'N/A'}"
+            )
+
+        with col2:
+
+            st.write(
+                f"**AMC End:** "
+                f"{camera.amc_end_date or 'N/A'}"
+            )
+
+        # -------------------------------------------------
+        # DESCRIPTION
+        # -------------------------------------------------
+
+        if camera.description:
+
+            st.subheader(
+                "Description"
+            )
+
+            st.write(
+                camera.description
             )
 
     except Exception as e:
@@ -1006,11 +1037,19 @@ elif page == "CCTV Registry":
 
 elif page == "GIS Map":
 
-    show_map()
+    try:
+        show_map()
+    except Exception as e:
+        st.error("GIS Map error.")
+        st.exception(e)
 
 elif page == "Camera Onboarding":
 
-    show_onboarding()
+    try:
+        show_onboarding()
+    except Exception as e:
+        st.error("Camera Onboarding error.")
+        st.exception(e)
 
 elif page == "Camera Details":
 

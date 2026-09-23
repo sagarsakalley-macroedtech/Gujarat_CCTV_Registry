@@ -1,44 +1,52 @@
+import os
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-from database.models import Base
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./cctv_registry.db"
+)
 
+connect_args = {}
 
-DATABASE_URL = "sqlite:///cctv_registry.db"
-
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
 
 engine = create_engine(
     DATABASE_URL,
-    echo=False
+    connect_args=connect_args
 )
-
 
 SessionLocal = sessionmaker(
-    bind=engine,
     autocommit=False,
-    autoflush=False
+    autoflush=False,
+    bind=engine
 )
 
-
-def init_database():
-    """
-    Create all database tables.
-    """
-
-    Base.metadata.create_all(
-        bind=engine
-    )
+Base = declarative_base()
 
 
 def get_db():
-    """
-    Create database session.
-    """
-
     db = SessionLocal()
 
     try:
         yield db
-
     finally:
         db.close()
+
+
+def init_db():
+    """
+    Create all database tables if they do not already exist.
+    """
+
+    from database.models import (
+        Department,
+        District,
+        Camera,
+        CameraHealth,
+        MaintenanceRecord
+    )
+
+    Base.metadata.create_all(bind=engine)
