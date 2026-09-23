@@ -6,146 +6,6 @@
 
 import streamlit as st
 import pandas as pd
-import requests
-import os
-
-API_URL = os.getenv(
-    "API_URL",
-    "http://127.0.0.1:8000/api"
-)
-
-def get_dashboard():
-    response = requests.get(
-        f"{API_URL}/dashboard/summary"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_cameras():
-    response = requests.get(
-        f"{API_URL}/cameras/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_departments():
-    response = requests.get(
-        f"{API_URL}/departments/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_districts():
-    response = requests.get(
-        f"{API_URL}/districts/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_camera_locations():
-    response = requests.get(
-        f"{API_URL}/gis/cameras"
-    )
-    response.raise_for_status()
-    return response.json()
-
-st.set_page_config(
-    page_title="Gujarat CCTV Registry",
-    page_icon="📹",
-    layout="wide"
-)
-
-st.title("Gujarat Government Centralised CCTV Registry")
-st.caption("CCTV Registry & GIS Mapping System")
-
-
-try:
-    dashboard = get_dashboard()
-
-    total = dashboard["total_cameras"]
-    active = dashboard["active_cameras"]
-    inactive = dashboard["inactive_cameras"]
-    active_percentage = dashboard["active_percentage"]
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    col1.metric(
-        "Total Cameras",
-        total
-    )
-
-    col2.metric(
-        "Active Cameras",
-        active
-    )
-
-    col3.metric(
-        "Inactive Cameras",
-        inactive
-    )
-
-    col4.metric(
-        "Active %",
-        f"{active_percentage}%"
-    )
-
-except Exception as e:
-    st.error(f"API connection error: {e}")
-
-# ---------------------------------------------------------
-# API FUNCTIONS
-# ---------------------------------------------------------
-
-def get_dashboard():
-    response = requests.get(
-        f"{API_URL}/dashboard/summary"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_cameras():
-    response = requests.get(
-        f"{API_URL}/cameras/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_departments():
-    response = requests.get(
-        f"{API_URL}/departments/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_districts():
-    response = requests.get(
-        f"{API_URL}/districts/"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def get_camera_locations():
-    response = requests.get(
-        f"{API_URL}/gis/cameras"
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-# ---------------------------------------------------------
-# STREAMLIT UI
-# ---------------------------------------------------------
-
-st.title("Gujarat CCTV Registry")
-
 from sqlalchemy import func
 
 from config.database import SessionLocal
@@ -180,8 +40,6 @@ st.markdown(
     """
     <style>
 
-    /* Main title */
-
     .main-title {
         font-size: 38px;
         font-weight: 700;
@@ -194,8 +52,6 @@ st.markdown(
         margin-bottom: 25px;
     }
 
-    /* Sidebar */
-
     .sidebar-title {
         font-size: 25px;
         font-weight: 700;
@@ -205,8 +61,6 @@ st.markdown(
         font-size: 14px;
         color: #6b7280;
     }
-
-    /* Model card */
 
     .model-card {
         background-color: #e8f0fe;
@@ -218,6 +72,7 @@ st.markdown(
     .model-title {
         font-size: 20px;
         font-weight: 700;
+        margin-bottom: 10px;
     }
 
     .model-text {
@@ -232,7 +87,7 @@ st.markdown(
 
 
 # =========================================================
-# SIDEBAR HEADER
+# SIDEBAR
 # =========================================================
 
 st.sidebar.markdown(
@@ -240,7 +95,12 @@ st.sidebar.markdown(
     <div class="sidebar-title">
         Gujarat CCTV Registry
     </div>
+    """,
+    unsafe_allow_html=True
+)
 
+st.sidebar.markdown(
+    """
     <div class="sidebar-subtitle">
         Centralised CCTV Asset & GIS Registry
     </div>
@@ -274,17 +134,13 @@ page = st.sidebar.radio(
 st.sidebar.markdown(
     """
     <div class="model-card">
-
         <div class="model-title">
             Model 01
         </div>
 
-        <br>
-
         <div class="model-text">
-            Centralised CCTV Registry & GIS Mapping
+            Centralised CCTV Registry &amp; GIS Mapping
         </div>
-
     </div>
     """,
     unsafe_allow_html=True
@@ -296,7 +152,6 @@ st.sidebar.markdown(
 # =========================================================
 
 def get_database():
-
     return SessionLocal()
 
 
@@ -312,9 +167,11 @@ def show_dashboard():
     )
 
     st.markdown(
-        '<div class="sub-title">'
-        'Centralised Government CCTV Asset Management Platform'
-        '</div>',
+        """
+        <div class="sub-title">
+            Centralised Government CCTV Asset Management Platform
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -360,8 +217,7 @@ def show_dashboard():
         maintenance_cameras = (
             db.query(Camera)
             .filter(
-                Camera.maintenance_status
-                == "Under Maintenance"
+                Camera.maintenance_status == "Under Maintenance"
             )
             .count()
         )
@@ -371,14 +227,10 @@ def show_dashboard():
         # -------------------------------------------------
 
         if total_cameras > 0:
-
             operational_rate = (
-                active_cameras /
-                total_cameras
+                active_cameras / total_cameras
             ) * 100
-
         else:
-
             operational_rate = 0
 
         # -------------------------------------------------
@@ -388,28 +240,24 @@ def show_dashboard():
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-
             st.metric(
                 "Total Cameras",
                 total_cameras
             )
 
         with col2:
-
             st.metric(
                 "Active Cameras",
                 active_cameras
             )
 
         with col3:
-
             st.metric(
                 "Offline Cameras",
                 offline_cameras
             )
 
         with col4:
-
             st.metric(
                 "Departments",
                 total_departments
@@ -428,21 +276,18 @@ def show_dashboard():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-
             st.metric(
                 "Districts Covered",
                 total_districts
             )
 
         with col2:
-
             st.metric(
                 "Under Maintenance",
                 maintenance_cameras
             )
 
         with col3:
-
             st.metric(
                 "Operational Rate",
                 f"{operational_rate:.1f}%"
@@ -465,8 +310,7 @@ def show_dashboard():
             )
             .outerjoin(
                 Camera,
-                Department.id
-                == Camera.department_id
+                Department.id == Camera.department_id
             )
             .group_by(
                 Department.department_name
@@ -488,9 +332,7 @@ def show_dashboard():
             )
 
             st.bar_chart(
-                df_department.set_index(
-                    "Department"
-                )
+                df_department.set_index("Department")
             )
 
         else:
@@ -533,9 +375,7 @@ def show_dashboard():
             with col1:
 
                 st.bar_chart(
-                    df_status.set_index(
-                        "Status"
-                    )
+                    df_status.set_index("Status")
                 )
 
             with col2:
@@ -556,9 +396,7 @@ def show_dashboard():
 
         recent_cameras = (
             db.query(Camera)
-            .order_by(
-                Camera.id.desc()
-            )
+            .order_by(Camera.id.desc())
             .limit(10)
             .all()
         )
@@ -570,17 +408,14 @@ def show_dashboard():
             for camera in recent_cameras:
 
                 department_name = "Unknown"
-
                 district_name = "Unknown"
 
                 if camera.department:
-
                     department_name = (
                         camera.department.department_name
                     )
 
                 if camera.district:
-
                     district_name = (
                         camera.district.district_name
                     )
@@ -619,14 +454,18 @@ def show_dashboard():
                     }
                 )
 
-            df_recent = pd.DataFrame(
-                rows
-            )
+            df_recent = pd.DataFrame(rows)
 
             st.dataframe(
                 df_recent,
                 use_container_width=True,
                 hide_index=True
+            )
+
+        else:
+
+            st.info(
+                "No CCTV cameras registered yet."
             )
 
     except Exception as e:
@@ -744,8 +583,7 @@ def show_registry():
                 (
                     d
                     for d in departments
-                    if d.department_name
-                    == selected_department
+                    if d.department_name == selected_department
                 ),
                 None
             )
@@ -753,8 +591,7 @@ def show_registry():
             if department:
 
                 query = query.filter(
-                    Camera.department_id
-                    == department.id
+                    Camera.department_id == department.id
                 )
 
         if selected_district != "All Districts":
@@ -763,8 +600,7 @@ def show_registry():
                 (
                     d
                     for d in districts
-                    if d.district_name
-                    == selected_district
+                    if d.district_name == selected_district
                 ),
                 None
             )
@@ -772,15 +608,13 @@ def show_registry():
             if district:
 
                 query = query.filter(
-                    Camera.district_id
-                    == district.id
+                    Camera.district_id == district.id
                 )
 
         if selected_status != "All Status":
 
             query = query.filter(
-                Camera.operational_status
-                == selected_status
+                Camera.operational_status == selected_status
             )
 
         cameras = (
@@ -874,9 +708,7 @@ def show_registry():
 
         if rows:
 
-            df = pd.DataFrame(
-                rows
-            )
+            df = pd.DataFrame(rows)
 
             st.dataframe(
                 df,
@@ -949,8 +781,7 @@ def show_camera_details():
             (
                 c
                 for c in cameras
-                if c.camera_id
-                == selected_camera_id
+                if c.camera_id == selected_camera_id
             ),
             None
         )
@@ -1169,21 +1000,17 @@ if page == "Dashboard":
 
     show_dashboard()
 
-
 elif page == "CCTV Registry":
 
     show_registry()
-
 
 elif page == "GIS Map":
 
     show_map()
 
-
 elif page == "Camera Onboarding":
 
     show_onboarding()
-
 
 elif page == "Camera Details":
 
