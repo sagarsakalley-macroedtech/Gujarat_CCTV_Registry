@@ -55,12 +55,109 @@ st.set_page_config(
 
 try:
     Base.metadata.create_all(bind=engine)
+    from database.seed_data import seed_database
+
+    try:
+    db = SessionLocal()
+
+    department_count = db.query(func.count(Department.id)).scalar()
+    district_count = db.query(func.count(District.id)).scalar()
+    camera_count = db.query(func.count(Camera.id)).scalar()
+
+    db.close()
+
+    if department_count == 0 and district_count == 0 and camera_count == 0:
+        seed_database()
+
 except Exception as e:
-    st.error("Database initialization failed.")
+    st.error(f"Database seeding failed: {e}")
+except Exception as e:
+    st.error(f"Database initialization failed: {e}")
     st.exception(e)
     st.stop()
 
+# =========================================================
+# SEED DATABASE IF EMPTY
+# =========================================================
 
+from sqlalchemy import func
+
+def seed_database_if_empty():
+    db = SessionLocal()
+
+    try:
+        department_count = db.query(func.count(Department.id)).scalar()
+        district_count = db.query(func.count(District.id)).scalar()
+        camera_count = db.query(func.count(Camera.id)).scalar()
+
+        if department_count == 0 and district_count == 0 and camera_count == 0:
+
+            # Departments
+            departments = [
+                "Police",
+                "Home Department",
+                "Health Department",
+                "Education Department",
+                "Urban Development",
+                "Transport Department",
+                "Revenue Department",
+                "Municipal Corporation",
+                "Forest Department",
+                "Fire Department",
+                "Disaster Management",
+                "PWD",
+                "Water Resources",
+                "Energy Department",
+                "Industries Department",
+                "Tourism Department",
+                "Agriculture Department",
+                "Rural Development",
+                "Information Technology",
+                "Gujarat State Road Transport",
+                "Smart City Mission",
+                "Airport Authority",
+                "Railways",
+                "Ports Department",
+                "Environment Department",
+                "Other"
+            ]
+
+            for name in departments:
+                db.add(Department(name=name))
+
+            db.commit()
+
+            # Districts
+            districts = [
+                "Ahmedabad", "Amreli", "Anand", "Aravalli",
+                "Banaskantha", "Bharuch", "Bhavnagar", "Botad",
+                "Chhota Udaipur", "Dahod", "Dang", "Devbhumi Dwarka",
+                "Gandhinagar", "Gir Somnath", "Jamnagar", "Junagadh",
+                "Kheda", "Kutch", "Mahisagar", "Mehsana",
+                "Morbi", "Narmada", "Navsari", "Panchmahal",
+                "Patan", "Porbandar", "Rajkot", "Sabarkantha",
+                "Surat", "Surendranagar", "Vadodara", "Valsad"
+            ]
+
+            for name in districts:
+                db.add(District(name=name))
+
+            db.commit()
+
+            st.success("Database seeded successfully.")
+
+        # Camera records should be added by your existing
+        # camera onboarding / seed logic.
+
+    except Exception as e:
+        db.rollback()
+        st.error(f"Database seeding failed: {e}")
+
+    finally:
+        db.close()
+
+
+seed_database_if_empty()
 # =========================================================
 # CUSTOM CSS
 # =========================================================

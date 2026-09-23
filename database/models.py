@@ -11,101 +11,38 @@ from sqlalchemy import (
 )
 
 from sqlalchemy.orm import relationship
-
 from datetime import datetime
 
-# IMPORTANT:
-# Use the SAME Base from database.database
-from .database import Base
+from database.database import Base
 
-
-# =========================================================
-# DEPARTMENT
-# =========================================================
 
 class Department(Base):
-
     __tablename__ = "departments"
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        autoincrement=True
-    )
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    department_code = Column(String(50), unique=True, nullable=False)
+    department_name = Column(String(200), nullable=False)
+    description = Column(Text)
 
-    department_code = Column(
-        String(50),
-        unique=True,
-        nullable=False
-    )
+    cameras = relationship("Camera", back_populates="department")
 
-    department_name = Column(
-        String(200),
-        nullable=False
-    )
-
-    description = Column(
-        Text
-    )
-
-    cameras = relationship(
-        "Camera",
-        back_populates="department",
-        cascade="all, delete-orphan"
-    )
-
-
-# =========================================================
-# DISTRICT
-# =========================================================
 
 class District(Base):
-
     __tablename__ = "districts"
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        autoincrement=True
-    )
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    district_name = Column(String(100), unique=True, nullable=False)
+    state = Column(String(100), default="Gujarat")
 
-    district_name = Column(
-        String(100),
-        unique=True,
-        nullable=False
-    )
+    cameras = relationship("Camera", back_populates="district")
 
-    state = Column(
-        String(100),
-        default="Gujarat"
-    )
-
-    cameras = relationship(
-        "Camera",
-        back_populates="district",
-        cascade="all, delete-orphan"
-    )
-
-
-# =========================================================
-# CAMERA
-# =========================================================
 
 class Camera(Base):
-
     __tablename__ = "cameras"
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        autoincrement=True
-    )
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
-    camera_id = Column(
-        String(50),
-        unique=True,
-        nullable=False
-    )
+    camera_id = Column(String(50), unique=True, nullable=False)
 
     department_id = Column(
         Integer,
@@ -119,81 +56,34 @@ class Camera(Base):
         nullable=False
     )
 
-    location_name = Column(
-        String(250)
-    )
+    location_name = Column(String(250))
+    taluka = Column(String(100))
+    village = Column(String(150))
 
-    taluka = Column(
-        String(100)
-    )
+    latitude = Column(Float)
+    longitude = Column(Float)
 
-    village = Column(
-        String(150)
-    )
+    camera_type = Column(String(100))
+    manufacturer = Column(String(100))
+    model = Column(String(100))
 
-    latitude = Column(
-        Float
-    )
+    ownership = Column(String(100))
+    connectivity_type = Column(String(100))
 
-    longitude = Column(
-        Float
-    )
+    storage_type = Column(String(100))
+    retention_days = Column(Integer)
 
-    camera_type = Column(
-        String(100)
-    )
+    vms_vendor = Column(String(100))
 
-    manufacturer = Column(
-        String(100)
-    )
+    operational_status = Column(String(50))
+    maintenance_status = Column(String(50))
 
-    model = Column(
-        String(100)
-    )
+    installation_date = Column(Date)
 
-    ownership = Column(
-        String(100)
-    )
+    amc_start_date = Column(Date)
+    amc_end_date = Column(Date)
 
-    connectivity_type = Column(
-        String(100)
-    )
-
-    storage_type = Column(
-        String(100)
-    )
-
-    retention_days = Column(
-        Integer
-    )
-
-    vms_vendor = Column(
-        String(100)
-    )
-
-    operational_status = Column(
-        String(50)
-    )
-
-    maintenance_status = Column(
-        String(50)
-    )
-
-    installation_date = Column(
-        Date
-    )
-
-    amc_start_date = Column(
-        Date
-    )
-
-    amc_end_date = Column(
-        Date
-    )
-
-    description = Column(
-        Text
-    )
+    description = Column(Text)
 
     created_at = Column(
         DateTime,
@@ -229,12 +119,7 @@ class Camera(Base):
     )
 
 
-# =========================================================
-# CAMERA HEALTH
-# =========================================================
-
 class CameraHealth(Base):
-
     __tablename__ = "camera_health"
 
     id = Column(
@@ -249,22 +134,13 @@ class CameraHealth(Base):
         nullable=False
     )
 
-    is_online = Column(
-        Boolean,
-        default=True
-    )
+    is_online = Column(Boolean, default=True)
 
-    last_seen = Column(
-        DateTime
-    )
+    last_seen = Column(DateTime)
 
-    health_status = Column(
-        String(50)
-    )
+    health_status = Column(String(50))
 
-    remarks = Column(
-        Text
-    )
+    remarks = Column(Text)
 
     camera = relationship(
         "Camera",
@@ -272,12 +148,7 @@ class CameraHealth(Base):
     )
 
 
-# =========================================================
-# MAINTENANCE RECORD
-# =========================================================
-
 class MaintenanceRecord(Base):
-
     __tablename__ = "maintenance_records"
 
     id = Column(
@@ -292,25 +163,15 @@ class MaintenanceRecord(Base):
         nullable=False
     )
 
-    maintenance_date = Column(
-        Date
-    )
+    maintenance_date = Column(Date)
 
-    issue_type = Column(
-        String(200)
-    )
+    issue_type = Column(String(200))
 
-    action_taken = Column(
-        Text
-    )
+    action_taken = Column(Text)
 
-    technician = Column(
-        String(150)
-    )
+    technician = Column(String(150))
 
-    status = Column(
-        String(50)
-    )
+    status = Column(String(50))
 
     camera = relationship(
         "Camera",

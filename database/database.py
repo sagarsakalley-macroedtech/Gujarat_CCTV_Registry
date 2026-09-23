@@ -1,11 +1,12 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# =========================================================
+
+# ============================================================
 # DATABASE CONFIGURATION
-# =========================================================
+# ============================================================
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -13,17 +14,14 @@ DATABASE_URL = os.getenv(
 )
 
 
-# =========================================================
-# ENGINE
-# =========================================================
+# ============================================================
+# SQLALCHEMY ENGINE
+# ============================================================
 
 connect_args = {}
 
 if DATABASE_URL.startswith("sqlite"):
-    connect_args = {
-        "check_same_thread": False
-    }
-
+    connect_args = {"check_same_thread": False}
 
 engine = create_engine(
     DATABASE_URL,
@@ -31,9 +29,11 @@ engine = create_engine(
 )
 
 
-# =========================================================
-# SESSION
-# =========================================================
+# ============================================================
+# BASE + SESSION
+# ============================================================
+
+Base = declarative_base()
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -42,33 +42,31 @@ SessionLocal = sessionmaker(
 )
 
 
-# =========================================================
-# BASE
-# =========================================================
-
-Base = declarative_base()
-
-
-# =========================================================
-# INITIALIZE DATABASE
-# =========================================================
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
 
 def init_db():
+    """
+    Create all database tables.
+    """
 
-    # IMPORTANT:
-    # Load all models before create_all()
-    from . import models
+    # Import models here to avoid circular imports
+    from database import models
 
-    Base.metadata.create_all(
-        bind=engine
-    )
+    Base.metadata.create_all(bind=engine)
+
+    print("DATABASE INITIALIZED SUCCESSFULLY")
 
 
-# =========================================================
+# ============================================================
 # DATABASE SESSION
-# =========================================================
+# ============================================================
 
 def get_db():
+    """
+    Provides a database session.
+    """
 
     db = SessionLocal()
 
